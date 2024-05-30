@@ -266,6 +266,7 @@ class RichTextPieceView extends Component {
     if (!item.inline) {
       this.dispose = observe(item, "_isReady", this.updateLoadingVisibility, true);
     }
+
   }
 
   componentWillUnmount() {
@@ -279,6 +280,65 @@ class RichTextPieceView extends Component {
     item.onDispose();
   }
 
+  scrollToSectionInIframe = (sectionId) => {
+    const iframe = document.getElementsByTagName('iframe')[0];
+    const iframeDocument = iframe.contentDocument || iframe.contentWindow.document;
+    const section = iframeDocument.getElementById(sectionId);
+    if (section) {
+      section.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else {
+      console.error('Section not found in iframe');
+    }
+  }
+
+  generateAnchorList = () => {
+    const iframe = document.getElementsByTagName('iframe')[0];
+    const iframeDocument = iframe.contentDocument || iframe.contentWindow.document;
+    const headers = iframeDocument.querySelectorAll('h1, h2, h3');
+    const anchorList = document.getElementById('anchorList');
+
+    let currentLevel1List = anchorList;
+    let currentLevel2List = null;
+    let currentLevel3List = null;
+
+    headers.forEach(header => {
+        const li = document.createElement('li');
+        const anchor = document.createElement('a');
+        anchor.href = `#${header.id}`;
+        anchor.textContent = header.textContent;
+        anchor.onclick = (event) => {
+            event.preventDefault();
+            const iframeContent = iframe.contentDocument || iframe.contentWindow.document;
+            const targetElement = iframeContent.getElementById(header.id);
+            targetElement.scrollIntoView({ behavior: 'smooth' });
+        };
+        li.appendChild(anchor);
+
+        if (header.tagName === 'H1') {
+            currentLevel1List.appendChild(li);
+            currentLevel2List = null;
+            currentLevel3List = null;
+        } else if (header.tagName === 'H2') {
+            if (!currentLevel2List) {
+                currentLevel2List = document.createElement('ul');
+                currentLevel1List.appendChild(currentLevel2List);
+            }
+            currentLevel2List.appendChild(li);
+            currentLevel3List = null;
+        } else if (header.tagName === 'H3') {
+            if (!currentLevel3List) {
+                if (!currentLevel2List) {
+                    currentLevel2List = document.createElement('ul');
+                    currentLevel1List.appendChild(currentLevel2List);
+                }
+                currentLevel3List = document.createElement('ul');
+                currentLevel2List.appendChild(currentLevel3List);
+            }
+            currentLevel3List.appendChild(li);
+        }
+    });
+}
+
   markObjectAsLoaded() {
     const { item } = this.props;
 
@@ -286,7 +346,6 @@ class RichTextPieceView extends Component {
 
     item.setLoaded(true);
     this.updateLoadingVisibility();
-
     // run in the next tick to have all the refs initialized
     setTimeout(() => this._handleUpdate(true));
   }
@@ -355,10 +414,11 @@ class RichTextPieceView extends Component {
       // but html's offsetHeight sometimes is zero, so get the max of both
       iframe.style.height = `${Math.max(body.scrollHeight, htmlEl.offsetHeight)}px`;
     }
-
+    this.generateAnchorList();
     this.markObjectAsLoaded();
   };
 
+  
   render() {
     const { item } = this.props;
 
@@ -419,7 +479,13 @@ class RichTextPieceView extends Component {
         <Elem name="loading" ref={this.loadingRef}>
           <LoadingOutlined />
         </Elem>
-
+        
+        <div style={{display: "flex"}}>
+        <div style={{paddingRight: "10px", position: "sticky", top: "0", height: "100vh"}}>
+          <h3>Table of Contents</h3>
+        <ul id="anchorList" style={{marginLeft: "-10px"}}></ul>
+        </div>
+        <div style={{width: "100%", paddingLeft: "2px", borderLeft: "solid"}}>
         <Elem
           key="root"
           name="iframe"
@@ -457,6 +523,9 @@ class RichTextPieceView extends Component {
             />
           </>
         )}
+        </div>
+        
+        </div>
       </Block>
     );
   }
