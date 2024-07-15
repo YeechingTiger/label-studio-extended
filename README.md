@@ -22,7 +22,7 @@ yarn install --frozen-lockfile
 # Build the main Label Studio app continuously for development.
 yarn watch
 ```
-
+Develop url here: http://localhost:8080/
 
 ### Only customize the Frontend with example data
 **Example: Customize the RichTextHtml component.**
