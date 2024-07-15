@@ -6,6 +6,7 @@ You can run the latest Label Studio version locally without installing the packa
 # Install all package dependencies
 pip install poetry
 poetry install
+poetry shell
 # Run database migrations
 python label_studio/manage.py migrate
 python label_studio/manage.py collectstatic
