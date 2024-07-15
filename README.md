@@ -19,7 +19,7 @@ cd web
 yarn install --frozen-lockfile
 
 # Build the main Label Studio app continuously for development.
-yarn ls:watch
+yarn watch
 ```
 
 
